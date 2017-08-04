@@ -1,0 +1,93 @@
+sql-stmt-list ::= [ sql-stmt ] ( ';' [ sql-stmt ] ) *
+sql-stmt ::= [ EXPLAIN [ QUERY PLAN ] ] ( alter-table-stmt | analyze-stmt | attach-stmt | begin-stmt | commit-stmt | create-index-stmt | create-table-stmt | create-trigger-stmt | create-view-stmt | create-virtual-table-stmt | delete-stmt | delete-stmt-limited | detach-stmt | drop-index-stmt | drop-table-stmt | drop-trigger-stmt | drop-view-stmt | insert-stmt | pragma-stmt | reindex-stmt | release-stmt | rollback-stmt | savepoint-stmt | select-stmt | update-stmt | update-stmt-limited | vacuum-stmt )
+alter-table-stmt ::= ALTER TABLE [ database-name '.' ] table-name ( RENAME TO new-table-name | ADD [ COLUMN ] column-def )
+analyze-stmt ::= ANALYZE [ database-name | table-or-index-name | database-name '.' table-or-index-name ]
+attach-stmt ::= ATTACH [ DATABASE ] expr AS database-name
+begin-stmt ::= BEGIN [ DEFERRED | IMMEDIATE | EXCLUSIVE ] [ TRANSACTION ]
+commit-stmt ::= ( COMMIT | END ) [ TRANSACTION ]
+rollback-stmt ::= ROLLBACK [ TRANSACTION ] [ TO [ SAVEPOINT ] savepoint-name ]
+savepoint-stmt ::= SAVEPOINT savepoint-name
+release-stmt ::= RELEASE [ SAVEPOINT ] savepoint-name
+create-index-stmt ::= CREATE [ UNIQUE ] INDEX [ IF NOT EXISTS ] [ database-name '.' ] index-name ON table-name '(' indexed-column ( ',' indexed-column ) * ')' [ WHERE expr ]
+indexed-column ::= column-name [ COLLATE collation-name ] [ ASC | DESC ]
+create-table-stmt ::= CREATE [ TEMP | TEMPORARY ] TABLE [ IF NOT EXISTS ] [ database-name '.' ] table-name ( '(' column-def ( ',' column-def ) * ( ',' table-constraint ) * ')' [ WITHOUT ROWID ] | AS select-stmt )
+column-def ::= column-name [ type-name ] ( column-constraint ) *
+type-name ::= name [ '(' signed-number ')' | '(' signed-number ',' signed-number ')' ]
+column-constraint ::= [ CONSTRAINT name ] ( PRIMARY KEY [ ASC | DESC ] conflict-clause [ AUTOINCREMENT ] | NOT NULL conflict-clause | UNIQUE conflict-clause | CHECK '(' expr ')' | DEFAULT ( signed-number | literal-value | '(' expr ')' ) | COLLATE collation-name | foreign-key-clause )
+signed-number ::= [ '+' | '-' ] numeric-literal
+table-constraint ::= [ CONSTRAINT name ] ( ( PRIMARY KEY | UNIQUE ) '(' indexed-column ( ',' indexed-column ) * ')' conflict-clause | CHECK '(' expr ')' | FOREIGN KEY '(' column-name ( ',' column-name ) * ')' foreign-key-clause )
+foreign-key-clause ::= REFERENCES foreign-table [ '(' column-name ( ',' column-name ) * ')' ] [ ( ON ( DELETE | UPDATE ) ( SET NULL | SET DEFAULT | CASCADE | RESTRICT | NO ACTION ) | MATCH name ) ] [ [ NOT ] DEFERRABLE [ INITIALLY DEFERRED | INITIALLY IMMEDIATE ] ]
+conflict-clause ::= [ ON CONFLICT ( ROLLBACK | ABORT | FAIL | IGNORE | REPLACE ) ]
+create-trigger-stmt ::= CREATE [ TEMP | TEMPORARY ] TRIGGER [ IF NOT EXISTS ] [ database-name '.' ] trigger-name [ BEFORE | AFTER | INSTEAD OF ] ( DELETE | INSERT | UPDATE [ OF column-name ( ',' column-name ) * ] ) ON table-name [ FOR EACH ROW ] [ WHEN expr ] BEGIN ( update-stmt | insert-stmt | delete-stmt | select-stmt ) ';' END
+create-view-stmt ::= CREATE [ TEMP | TEMPORARY ] VIEW [ IF NOT EXISTS ] [ database-name '.' ] view-name AS select-stmt
+create-virtual-table-stmt ::= CREATE VIRTUAL TABLE [ IF NOT EXISTS ] [ database-name '.' ] table-name USING module-name [ '(' module-argument ( ',' module-argument ) * ')' ]
+with-clause ::= WITH [ RECURSIVE ] cte-table-name AS '(' select-stmt ')' ( ',' cte-table-name AS '(' select-stmt ')' ) *
+cte-table-name ::= table-name [ '(' column-name ( ',' column-name ) * ')' ]
+recursive-cte ::= cte-table-name AS '(' initial-select ( UNION | UNION ALL ) recursive-select ')'
+common-table-expression ::= table-name [ '(' column-name ( ',' column-name ) * ')' ] AS '(' select-stmt ')'
+delete-stmt ::= [ with-clause ] DELETE FROM qualified-table-name [ WHERE expr ]
+delete-stmt-limited ::= [ with-clause ] DELETE FROM qualified-table-name [ WHERE expr ] [ [ ORDER BY ordering-term ( ',' ordering-term ) * ] LIMIT expr [ ( OFFSET | ',' ) expr ] ]
+detach-stmt ::= DETACH [ DATABASE ] database-name
+drop-index-stmt ::= DROP INDEX [ IF EXISTS ] [ database-name '.' ] index-name
+drop-table-stmt ::= DROP TABLE [ IF EXISTS ] [ database-name '.' ] table-name
+drop-trigger-stmt ::= DROP TRIGGER [ IF EXISTS ] [ database-name '.' ] trigger-name
+drop-view-stmt ::= DROP VIEW [ IF EXISTS ] [ database-name '.' ] view-name
+expr ::= ( literal-value
+         | bind-parameter
+         | [ [ database-name '.' ] table-name '.' ] column-name
+         | unary-operator expr
+         | expr binary-operator expr
+         | function-name '(' [ [ DISTINCT ] expr ( ',' expr ) * | '*' ] ')'
+         | '(' expr ')'
+         | CAST '(' expr AS type-name ')'
+         | expr COLLATE collation-name
+         | expr [ NOT ] ( LIKE | GLOB | REGEXP | MATCH ) expr [ ESCAPE expr ]
+         | expr ( ISNULL | NOTNULL | NOT NULL )
+         | expr IS [ NOT ] expr
+         | expr [ NOT ] BETWEEN expr AND expr
+         | expr [ NOT ] IN ( '(' [ select-stmt | expr ( ',' expr ) * ] ')' | [ database-name '.' ] table-name )
+         | [ [ NOT ] EXISTS ] '(' select-stmt ')'
+         | CASE [ expr ] WHEN expr THEN expr [ ELSE expr ] END
+         | raise-function )
+raise-function ::= RAISE '(' ( IGNORE | ( ROLLBACK | ABORT | FAIL ) ',' error-message ) ')'
+literal-value ::= ( numeric-literal
+                  | string-literal
+                  | blob-literal
+                  | NULL
+                  | CURRENT_TIME
+                  | CURRENT_DATE
+                  | CURRENT_TIMESTAMP )
+numeric-literal ::= ( digit [ decimal-point ( digit ) * ] | decimal-point digit ) [ E [ '+' | '-' ] digit ]
+insert-stmt ::= [ with-clause ] ( INSERT | REPLACE | INSERT OR REPLACE | INSERT OR ROLLBACK | INSERT OR ABORT | INSERT OR FAIL | INSERT OR IGNORE ) INTO [ database-name '.' ] table-name [ '(' column-name ( ',' column-name ) * ')' ] ( VALUES '(' expr ( ',' expr ) * ')' ( ',' '(' expr ( ',' expr ) * ')' ) * | select-stmt | DEFAULT VALUES )
+pragma-stmt ::= PRAGMA [ database-name '.' ] pragma-name [ '=' pragma-value | '(' pragma-value ')' ]
+pragma-value ::= ( signed-number
+                 | name
+                 | string-literal )
+reindex-stmt ::= REINDEX [ collation-name | [ database-name '.' ] ( table-name | index-name ) ]
+select-stmt ::= [ WITH [ RECURSIVE ] common-table-expression ( ',' common-table-expression ) * ] ( SELECT [ DISTINCT | ALL ] result-column ( ',' result-column ) * [ FROM ( table-or-subquery ( ',' table-or-subquery ) * | join-clause ) ] [ WHERE expr ] [ GROUP BY expr ( ',' expr ) * [ HAVING expr ] ] | VALUES '(' expr ( ',' expr ) * ')' ( ',' '(' expr ( ',' expr ) * ')' ) * ) ( compound-operator ( SELECT [ DISTINCT | ALL ] result-column ( ',' result-column ) * [ FROM ( table-or-subquery ( ',' table-or-subquery ) * | join-clause ) ] [ WHERE expr ] [ GROUP BY expr ( ',' expr ) * [ HAVING expr ] ] | VALUES '(' expr ( ',' expr ) * ')' ( ',' '(' expr ( ',' expr ) * ')' ) * ) ) * [ ORDER BY ordering-term ( ',' ordering-term ) * ] [ LIMIT expr [ ( OFFSET | ',' ) expr ] ]
+join-clause ::= table-or-subquery [ join-operator table-or-subquery join-constraint ]
+select-core ::= ( SELECT [ DISTINCT | ALL ] result-column ( ',' result-column ) * [ FROM ( table-or-subquery ( ',' table-or-subquery ) * | join-clause ) ] [ WHERE expr ] [ GROUP BY expr ( ',' expr ) * [ HAVING expr ] ]
+                | VALUES '(' expr ( ',' expr ) * ')' ( ',' '(' expr ( ',' expr ) * ')' ) * )
+factored-select-stmt ::= [ WITH [ RECURSIVE ] common-table-expression ( ',' common-table-expression ) * ] select-core ( compound-operator select-core ) * [ ORDER BY ordering-term ( ',' ordering-term ) * ] [ LIMIT expr [ ( OFFSET | ',' ) expr ] ]
+simple-select-stmt ::= [ WITH [ RECURSIVE ] common-table-expression ( ',' common-table-expression ) * ] select-core [ ORDER BY ordering-term ( ',' ordering-term ) * ] [ LIMIT expr [ ( OFFSET | ',' ) expr ] ]
+compound-select-stmt ::= [ WITH [ RECURSIVE ] common-table-expression ( ',' common-table-expression ) * ] select-core ( UNION | UNION ALL | INTERSECT | EXCEPT ) select-core [ ORDER BY ordering-term ( ',' ordering-term ) * ] [ LIMIT expr [ ( OFFSET | ',' ) expr ] ]
+table-or-subquery ::= ( [ database-name '.' ] table-name [ [ AS ] table-alias ] [ INDEXED BY index-name | NOT INDEXED ]
+                      | '(' ( table-or-subquery ( ',' table-or-subquery ) * | join-clause ) ')'
+                      | '(' select-stmt ')' [ [ AS ] table-alias ] )
+result-column ::= ( '*'
+                  | table-name '.' '*'
+                  | expr [ [ AS ] column-alias ] )
+join-operator ::= ( ','
+                  | [ NATURAL ] [ LEFT [ OUTER ] | INNER | CROSS ] JOIN )
+join-constraint ::= [ ON expr | USING '(' column-name ( ',' column-name ) * ')' ]
+ordering-term ::= expr [ COLLATE collation-name ] [ ASC | DESC ]
+compound-operator ::= ( UNION
+                      | UNION ALL
+                      | INTERSECT
+                      | EXCEPT )
+update-stmt ::= [ with-clause ] UPDATE [ OR ROLLBACK | OR ABORT | OR REPLACE | OR FAIL | OR IGNORE ] qualified-table-name SET column-name '=' expr ( ',' column-name '=' expr ) * [ WHERE expr ]
+update-stmt-limited ::= [ with-clause ] UPDATE [ OR ROLLBACK | OR ABORT | OR REPLACE | OR FAIL | OR IGNORE ] qualified-table-name SET column-name '=' expr ( ',' column-name '=' expr ) * [ WHERE expr ] [ [ ORDER BY ordering-term ( ',' ordering-term ) * ] LIMIT expr [ ( OFFSET | ',' ) expr ] ]
+qualified-table-name ::= [ database-name '.' ] table-name [ INDEXED BY index-name | NOT INDEXED ]
+vacuum-stmt ::= VACUUM
+comment-syntax ::= ( -- ( anything-except-newline ) * ( newline | end-of-input )
+                   | /* ( anything-except-*/ ) * ( */ | end-of-input ) )
