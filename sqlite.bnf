@@ -1,3 +1,35 @@
+{
+  tokens=[
+    SEMI=';'
+    EQ='='
+    LP='('
+    RP=')'
+    DOT='.'
+    COMMA=','
+
+    space='regexp:\s+'
+    comment='regexp:--.*'
+    digit='regexp:\d+(\.\d*)?'
+    id='regexp:\p{Alpha}\w*'
+    string="regexp:('([^'\\]|\\.)*'|\"([^\"\\]|\\.)*\")"
+
+    plus='+'
+    minus='-'
+    times='*'
+    div='/'
+    not='!'
+    not_equal='<>'
+    equals='=='
+    mod='%'
+    lt='<'
+    gt='>'
+    lte='<='
+    gte='>='
+    or='||'
+  ]
+  extends(".*expr")=expr
+}
+
 sql_stmt_list ::= [ sql_stmt ] ( ';' [ sql_stmt ] ) *
 sql_stmt ::= [ EXPLAIN [ QUERY PLAN ] ] ( alter_table_stmt | analyze_stmt | attach_stmt | begin_stmt | commit_stmt | create_index_stmt | create_table_stmt | create_trigger_stmt | create_view_stmt | create_virtual_table_stmt | delete_stmt | delete_stmt_limited | detach_stmt | drop_index_stmt | drop_table_stmt | drop_trigger_stmt | drop_view_stmt | insert_stmt | pragma_stmt | reindex_stmt | release_stmt | rollback_stmt | savepoint_stmt | select_stmt | update_stmt | update_stmt_limited | vacuum_stmt )
 alter_table_stmt ::= ALTER TABLE [ database_name '.' ] table_name ( RENAME TO new_table_name | ADD [ COLUMN ] column_def )
@@ -32,23 +64,41 @@ drop_index_stmt ::= DROP INDEX [ IF EXISTS ] [ database_name '.' ] index_name
 drop_table_stmt ::= DROP TABLE [ IF EXISTS ] [ database_name '.' ] table_name
 drop_trigger_stmt ::= DROP TRIGGER [ IF EXISTS ] [ database_name '.' ] trigger_name
 drop_view_stmt ::= DROP VIEW [ IF EXISTS ] [ database_name '.' ] view_name
-expr ::= ( literal_value
-         | bind_parameter
-         | [ [ database_name '.' ] table_name '.' ] column_name
-         | unary_operator expr
-         | expr binary_operator expr
-         | function_name '(' [ [ DISTINCT ] expr ( ',' expr ) * | '*' ] ')'
-         | '(' expr ')'
-         | CAST '(' expr AS type_name ')'
-         | expr COLLATE collation_name
-         | expr [ NOT ] ( LIKE | GLOB | REGEXP | MATCH ) expr [ ESCAPE expr ]
-         | expr ( ISNULL | NOTNULL | NOT NULL )
-         | expr IS [ NOT ] expr
-         | expr [ NOT ] BETWEEN expr AND expr
-         | expr [ NOT ] IN ( '(' [ select_stmt | expr ( ',' expr ) * ] ')' | [ database_name '.' ] table_name )
-         | [ [ NOT ] EXISTS ] '(' select_stmt ')'
-         | CASE [ expr ] WHEN expr THEN expr [ ELSE expr ] END
-         | raise_function )
+expr ::= ( literal_expr
+         | bind_expr
+         | column_expr
+         | unary_expr
+         | binary_expr
+         | function_expr
+         | paren_expr
+         | cast_expr
+         | collate_expr
+         | like_expr
+         | null_expr
+         | is_expr
+         | between_expr
+         | in_expr
+         | exists_expr
+         | case_expr
+         | raise_expr )
+
+literal_expr ::= literal_value
+bind_expr ::= bind_parameter
+column_expr ::= [ [ database_name '.' ] table_name '.' ] column_name
+unary_expr ::= unary_operator expr
+binary_expr ::= expr ( '+' | '_' | '*' | '/' | '=' | '<>' | '==' | '<' | '>' | '<=' | '>=' ) expr
+function_expr ::= function_name '(' [ [ DISTINCT ] expr ( ',' expr ) * | '*' ] ')'
+paren_expr ::= '(' expr ')'
+cast_expr ::= CAST '(' expr AS type_name ')'
+collate_expr ::= expr COLLATE collation_name
+like_expr ::= expr [ NOT ] ( LIKE | GLOB | REGEXP | MATCH ) expr [ ESCAPE expr ]
+null_expr ::= expr ( ISNULL | NOTNULL | NOT NULL )
+is_expr ::= expr IS [ NOT ] expr
+between_expr ::= expr [ NOT ] BETWEEN expr AND expr
+in_expr ::= expr [ NOT ] IN ( '(' [ select_stmt | expr ( ',' expr ) * ] ')' | [ database_name '.' ] table_name )
+exists_expr ::= [ [ NOT ] EXISTS ] '(' select_stmt ')'
+case_expr ::= CASE [ expr ] WHEN expr THEN expr [ ELSE expr ] END
+raise_expr ::= raise_function
 raise_function ::= RAISE '(' ( IGNORE | ( ROLLBACK | ABORT | FAIL ) ',' error_message ) ')'
 literal_value ::= ( numeric_literal
                   | string_literal
@@ -89,5 +139,10 @@ update_stmt ::= [ with_clause ] UPDATE [ OR ROLLBACK | OR ABORT | OR REPLACE | O
 update_stmt_limited ::= [ with_clause ] UPDATE [ OR ROLLBACK | OR ABORT | OR REPLACE | OR FAIL | OR IGNORE ] qualified_table_name SET column_name '=' expr ( ',' column_name '=' expr ) * [ WHERE expr ] [ [ ORDER BY ordering_term ( ',' ordering_term ) * ] LIMIT expr [ ( OFFSET | ',' ) expr ] ]
 qualified_table_name ::= [ database_name '.' ] table_name [ INDEXED BY index_name | NOT INDEXED ]
 vacuum_stmt ::= VACUUM
-comment_syntax ::= ( '--' ( anything_except_newline ) * ( newline | end_of_input )
-                   | /* ( anything_except_*/ ) * ( */ | end_of_input ) )
+table_name ::= id
+database_name ::= id
+index_name ::= id
+column_name ::= id
+column_alias ::= id
+table_alias ::= id
+foreign_table ::= id
