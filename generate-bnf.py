@@ -11,12 +11,7 @@ def definition_for_table(table):
 
     # Add the LHS of the definition.
     name = options[0].find_all('td')
-    prefix = name[0].string + ' ::= '
-
-    # Use the override rule
-    if prefix in meta_inf:
-        return
-
+    prefix = name[0].string.replace('-', '_') + ' ::= '
     result += prefix
 
     # Add the RHS of the definition
@@ -24,7 +19,7 @@ def definition_for_table(table):
         result += '( '
     for option_index, option in enumerate(options):
         if option_index != 0:
-            result += '\n' + (' ' * len(name[0].string + ' ::= ')) + '| '
+            result += '\n' + (' ' * len(prefix)) + '| '
         stack = []
         collapse_element(option.find_all('td')[2], stack)
         result += ' '.join(stack)
@@ -61,7 +56,7 @@ def collapse_element(element, stack):
         if quoted in meta_inf:
             stack.append(quoted)
         else:
-            stack.append(piece)
+            stack.append(piece.replace('-', '_'))
 
 
 def switch_to_rounded_paren(stack):
