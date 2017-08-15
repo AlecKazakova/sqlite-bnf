@@ -12,20 +12,6 @@
     digit='regexp:\d+(\.\d*)?'
     id='regexp:\p{Alpha}\w*'
     string="regexp:('([^'\\]|\\.)*'|\"([^\"\\]|\\.)*\")"
-
-    plus='+'
-    minus='-'
-    times='*'
-    div='/'
-    not='!'
-    not_equal='<>'
-    equals='=='
-    mod='%'
-    lt='<'
-    gt='>'
-    lte='<='
-    gte='>='
-    or='||'
   ]
   extends(".*expr")=expr
 }
@@ -55,7 +41,6 @@ create_view_stmt ::= CREATE [ TEMP | TEMPORARY ] VIEW [ IF NOT EXISTS ] [ databa
 create_virtual_table_stmt ::= CREATE VIRTUAL TABLE [ IF NOT EXISTS ] [ database_name '.' ] table_name USING module_name [ '(' module_argument ( ',' module_argument ) * ')' ]
 with_clause ::= WITH [ RECURSIVE ] cte_table_name AS '(' select_stmt ')' ( ',' cte_table_name AS '(' select_stmt ')' ) *
 cte_table_name ::= table_name [ '(' column_name ( ',' column_name ) * ')' ]
-recursive_cte ::= cte_table_name AS '(' initial_select ( UNION | UNION ALL ) recursive_select ')'
 common_table_expression ::= table_name [ '(' column_name ( ',' column_name ) * ')' ] AS '(' select_stmt ')'
 delete_stmt ::= [ with_clause ] DELETE FROM qualified_table_name [ WHERE expr ]
 delete_stmt_limited ::= [ with_clause ] DELETE FROM qualified_table_name [ WHERE expr ] [ [ ORDER BY ordering_term ( ',' ordering_term ) * ] LIMIT expr [ ( OFFSET | ',' ) expr ] ]
@@ -85,7 +70,7 @@ expr ::= ( literal_expr
 literal_expr ::= literal_value
 bind_expr ::= bind_parameter
 column_expr ::= [ [ database_name '.' ] table_name '.' ] column_name
-unary_expr ::= unary_operator expr
+unary_expr ::= ('+' | '-') expr
 binary_expr ::= expr ( '+' | '_' | '*' | '/' | '=' | '<>' | '==' | '<' | '>' | '<=' | '>=' ) expr
 function_expr ::= function_name '(' [ [ DISTINCT ] expr ( ',' expr ) * | '*' ] ')'
 paren_expr ::= '(' expr ')'
@@ -107,7 +92,7 @@ literal_value ::= ( numeric_literal
                   | CURRENT_TIME
                   | CURRENT_DATE
                   | CURRENT_TIMESTAMP )
-numeric_literal ::= ( digit [ decimal_point ( digit ) * ] | decimal_point digit ) [ E [ '+' | '-' ] digit ]
+numeric_literal ::= ( digit [ '.' ( digit ) * ] | '.' digit ) [ E [ '+' | '-' ] digit ]
 insert_stmt ::= [ with_clause ] ( INSERT | REPLACE | INSERT OR REPLACE | INSERT OR ROLLBACK | INSERT OR ABORT | INSERT OR FAIL | INSERT OR IGNORE ) INTO [ database_name '.' ] table_name [ '(' column_name ( ',' column_name ) * ')' ] ( VALUES '(' expr ( ',' expr ) * ')' ( ',' '(' expr ( ',' expr ) * ')' ) * | select_stmt | DEFAULT VALUES )
 pragma_stmt ::= PRAGMA [ database_name '.' ] pragma_name [ '=' pragma_value | '(' pragma_value ')' ]
 pragma_value ::= ( signed_number
@@ -116,11 +101,6 @@ pragma_value ::= ( signed_number
 reindex_stmt ::= REINDEX [ collation_name | [ database_name '.' ] ( table_name | index_name ) ]
 select_stmt ::= [ WITH [ RECURSIVE ] common_table_expression ( ',' common_table_expression ) * ] ( SELECT [ DISTINCT | ALL ] result_column ( ',' result_column ) * [ FROM ( table_or_subquery ( ',' table_or_subquery ) * | join_clause ) ] [ WHERE expr ] [ GROUP BY expr ( ',' expr ) * [ HAVING expr ] ] | VALUES '(' expr ( ',' expr ) * ')' ( ',' '(' expr ( ',' expr ) * ')' ) * ) ( compound_operator ( SELECT [ DISTINCT | ALL ] result_column ( ',' result_column ) * [ FROM ( table_or_subquery ( ',' table_or_subquery ) * | join_clause ) ] [ WHERE expr ] [ GROUP BY expr ( ',' expr ) * [ HAVING expr ] ] | VALUES '(' expr ( ',' expr ) * ')' ( ',' '(' expr ( ',' expr ) * ')' ) * ) ) * [ ORDER BY ordering_term ( ',' ordering_term ) * ] [ LIMIT expr [ ( OFFSET | ',' ) expr ] ]
 join_clause ::= table_or_subquery [ join_operator table_or_subquery join_constraint ]
-select_core ::= ( SELECT [ DISTINCT | ALL ] result_column ( ',' result_column ) * [ FROM ( table_or_subquery ( ',' table_or_subquery ) * | join_clause ) ] [ WHERE expr ] [ GROUP BY expr ( ',' expr ) * [ HAVING expr ] ]
-                | VALUES '(' expr ( ',' expr ) * ')' ( ',' '(' expr ( ',' expr ) * ')' ) * )
-factored_select_stmt ::= [ WITH [ RECURSIVE ] common_table_expression ( ',' common_table_expression ) * ] select_core ( compound_operator select_core ) * [ ORDER BY ordering_term ( ',' ordering_term ) * ] [ LIMIT expr [ ( OFFSET | ',' ) expr ] ]
-simple_select_stmt ::= [ WITH [ RECURSIVE ] common_table_expression ( ',' common_table_expression ) * ] select_core [ ORDER BY ordering_term ( ',' ordering_term ) * ] [ LIMIT expr [ ( OFFSET | ',' ) expr ] ]
-compound_select_stmt ::= [ WITH [ RECURSIVE ] common_table_expression ( ',' common_table_expression ) * ] select_core ( UNION | UNION ALL | INTERSECT | EXCEPT ) select_core [ ORDER BY ordering_term ( ',' ordering_term ) * ] [ LIMIT expr [ ( OFFSET | ',' ) expr ] ]
 table_or_subquery ::= ( [ database_name '.' ] table_name [ [ AS ] table_alias ] [ INDEXED BY index_name | NOT INDEXED ]
                       | '(' ( table_or_subquery ( ',' table_or_subquery ) * | join_clause ) ')'
                       | '(' select_stmt ')' [ [ AS ] table_alias ] )
@@ -147,3 +127,16 @@ column_alias ::= id
 table_alias ::= id
 foreign_table ::= id
 identifier ::= id
+pragma_name ::= id
+function_name ::= id
+string_literal ::= string
+table_or_index_name ::= id
+new_table_name ::= id
+savepoint_name ::= id
+trigger_name ::= id
+blob_literal ::= '0x' digit
+collation_name ::= id
+error_message ::= string
+view_name ::= id
+module_name ::= id
+bind_parameter ::= ( '?' [digit] | ':' identifier )
